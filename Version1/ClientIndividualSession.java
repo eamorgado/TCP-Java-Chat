@@ -35,7 +35,7 @@ class ClientIndividualSession{
         buffer = ByteBuffer.allocate(16384);
 
         //Set connection status
-        this.state = "CONNECTED";
+        this.state = "INIT";
     }
 
     //Getters-------------------------------------------------------------------
