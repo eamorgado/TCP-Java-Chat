@@ -8,7 +8,7 @@ import java.util.*;
 ClientIndividualSession:
     For our server to support multiple users we need to save each individual info
         for every active/connected user. Every user has a specific SocketChannel
-        and a SelectionKey and a ByteBuffer being those the connection fields
+        and a SelectionKey being those the connection fields
     
     A user connected to the server has a specific and unique username/nick as
         such we must also save its nick for every active user.
@@ -19,7 +19,6 @@ ClientIndividualSession:
 ------------------------------------------------------------------------------*/
 class ClientIndividualSession{
     //Connection Fields
-    ByteBuffer buffer; //save user ByteBuffer
     SocketChannel channel; //save user channel
     SelectionKey key; //save user key
 
@@ -32,14 +31,11 @@ class ClientIndividualSession{
     ClientIndividualSession(SocketChannel channel, SelectionKey key){
         this.channel = channel;
         this.key = key;
-        buffer = ByteBuffer.allocate(16384);
-
         //Set connection status
         this.connnection_state = "INIT";
     }
 
     //Getters-------------------------------------------------------------------
-    ByteBuffer getBuffer(){return this.buffer;}
     SocketChannel getChannel(){return this.channel;}
     SelectionKey getKey(){return this.key;}
 
@@ -48,8 +44,9 @@ class ClientIndividualSession{
     String getConState(){return this.connnection_state;}
 
     //Setters-------------------------------------------------------------------
-    private void setUsername(String username){this.username = username;}
-
+    void setUsername(String username){this.username = username;}
+    void setConState(String state){this.connnection_state = state;}
+    void setLobby(String lobby){this.lobby = lobby;}
     //diconnect user
     void userDisconnect(){
         try {

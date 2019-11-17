@@ -13,49 +13,13 @@ public class ChatServer{
     private static final CharsetDecoder decoder = charset.newDecoder();
 
     static String leftover = "";
+
+
 /*------------------------------------------------------------------------------
                             Auxiliary Functions
 ------------------------------------------------------------------------------*/
-    
-    public static String commandExecutionCode(String cmd, SelectionKey key, ClientSessionMonitor user_servers, String lobby){
-        cmd = cmd.toLowerCase();
-        ClientIndividualSession user = (ClientIndividualSession)key.attachment();
-        String code = "";
-        switch(cmd){
-            case "nick":  
-                if(!user_servers.isUsernameInUse(user.getUsername()))
-                    code = (user.getConState().equals("INSIDE")? "nick-new-lobby-ok" : "nick-ok");
-                else 
-                    code = "nick-use-error";
-            break;
-            case "join":
-                if(user.getUsername() != null){
-                    if(user_servers.doesLobbyExist(lobby))
-                        code = ((!user.getConState().equals("INSIDE"))? "join-ok" : "join-inside-ok");
-                    else
-                        code = (!(user.getConState().equals("INSIDE"))? "join-newlobby-ok" : "join-newlobby-inside-ok");
-                }
-                else code = "cmd-error";
-            break;
-            case "priv": 
-                code = ((!user.getConState().equals("INIT"))? "priv-ok" : "cmd-error");
-            break;
-            case "leave":  
-                code = ((user.getConState().equals("INSIDE"))? "leave-lobby" : "out-lobby");
-            break;
-            case "bye": 
-                code = ((!user.getConState().equals("INSIDE"))? "bye-ok" : "bye-lobby-ok");
-            break;
-            default: code = "cmd-error";
-        }
-        return code;
-    }
-
-
     private static boolean processInput(SocketChannel sc, SelectionKey key,ClientSessionMonitor user_servers) throws IOException{
         ClientIndividualSession user = (ClientIndividualSession)key.attachment();
-        String usermsg, user_new_username;
-
         buffer.clear();
         sc.read(buffer);
         buffer.flip();
@@ -64,11 +28,8 @@ public class ChatServer{
 
         String message = decoder.decode(buffer).toString();
         leftover += message;
-        if((int)message.charAt(message.length()-1) != 10)
-            return true;
-        else
-            message = leftover;
-        
+        if((int)message.charAt(message.length()-1) != 10) return true;
+        else message = leftover;
 
         if(message.charAt(0) == '/'){
             //command
@@ -81,31 +42,39 @@ public class ChatServer{
                 attribute = splited[1];
                 for(int i = 2; i < splited.length; i++) priv_send_msg += splited[i] + " ";
             }
-
             //parse command
             String s = ((command.equalsIgnoreCase("join"))? attribute : "");
-            switch(commandExecutionCode(command,key,user_servers,s)){
-                case "nick-new-lobby-ok":  break;
-                case "nick-ok":  break;
-                case "nick-use-error": break;
-                case "join-ok":  break;
-                case "join-inside-ok": break;
-                case "join-newlobby-ok": break;
-                case "join-newlobby-inside-ok": break;
-                case "priv-ok": break;
-                case "leave-lobby": break;
-                case "out-lobby": break;
-                case "bye-ok": break;
-                case "bye-lobby-ok": break;
-                case "cmd-error": break;
-            }
-            
+            switch(user_servers.commandExecutionCode(command,key,s)){
+                case "nick-ok": user_servers.cmdNick(user, buffer, attribute); break;
+                case "join-ok": user_servers.cmdJoin(user, buffer, attribute); break;
+                case "join-inside-ok": 
+                    user_servers.cmdLeave(user, buffer);
+                    user_servers.cmdJoin(user, buffer, attribute);
+                break;
+                case "join-newlobby-ok": user_servers.cmdCreateLobby(user, buffer, attribute); break;
+                case "join-newlobby-inside-ok": 
+                    user_servers.cmdLeave(user, buffer);
+                    user_servers.cmdJoin(user, buffer, attribute);
+                break;
+                case "priv-ok": user_servers.cmdPriv(user, buffer, attribute, priv_send_msg); break;
+                case "leave-lobby": user_servers.cmdLeave(user, buffer); break;
+                case "bye-ok": user_servers.cmdBye(user, buffer); break;
+                case "bye-lobby-ok":
+                    user_servers.cmdLeave(user, buffer);
+                    user_servers.cmdBye(user, buffer);
+                break;
+                default: user_servers.sendMessageUser("ERROR", user.getKey(), buffer); break;
+            }            
         }
         else{
-
+            if(user.getUsername() == null){
+                user_servers.sendMessageUser("ERROR", user.getKey(), buffer);
+                return true;
+            }
+            if(user.getConState().equals("INSIDE"))
+                user_servers.sendMessageToAll("MESSAGE "+user.getUsername()+" "+message, user, buffer);
         }
-
-        System.out.println(message);
+        leftover = "";
         return true;
     }
 
