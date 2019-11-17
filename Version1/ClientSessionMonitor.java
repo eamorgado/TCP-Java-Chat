@@ -37,7 +37,7 @@ class ClientSessionMonitor{
         this.active_users.add(user);
     }
 
-    SelectionKey findUserKey(Stringe username){
+    SelectionKey findUserKey(String username){
         for(ClientIndividualSession user : this.active_users)
             if(user.getUsername().equals(username))
                 return user.getKey();
