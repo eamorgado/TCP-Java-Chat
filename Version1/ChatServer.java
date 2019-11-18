@@ -98,7 +98,6 @@ public class ChatServer{
             //create selector
                 Selector selector = Selector.open();
                 ClientSessionMonitor user_servers = new ClientSessionMonitor(selector);
-                selector = user_servers.getSelect();
 
             //Register channel => listen incoming connections
                 ssc.register(selector,SelectionKey.OP_ACCEPT);

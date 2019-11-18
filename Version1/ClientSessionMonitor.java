@@ -103,7 +103,9 @@ class ClientSessionMonitor{
     }
 
     void cmdNick(ClientIndividualSession user,ByteBuffer buffer,String username){
+        this.sendMessageUser("OK", user.getKey(), buffer);
         if(user.getUsername() != null){
+            String old = user.getUsername();
             this.usernames.remove(user.getUsername());
             for(ClientIndividualSession u : this.active_users)
                 if(u.getUsername().equals(user.getUsername()))
@@ -112,12 +114,12 @@ class ClientSessionMonitor{
                 for(ClientIndividualSession u : this.lobbies.get(user.getLobby()))
                     if(u.getUsername().equals(user.getUsername()))
                         u.setUsername(username);
+            this.sendMessageUser("NEWNICK "+old+" "+username, user.getKey(), buffer);
         }else{
             user.setUsername(username);
             this.usernames.add(username);
             this.active_users.add(user);
         }
-        this.sendMessageUser("OK", user.getKey(), buffer);
     }
     void cmdPriv(ClientIndividualSession user,ByteBuffer buffer,String username, String message){
         SelectionKey dest = this.findUserKey(username);
