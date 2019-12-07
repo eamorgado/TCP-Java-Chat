@@ -32,19 +32,31 @@ public class ChatServer{
         else message = leftover;
 
         if(message.charAt(0) == '/'){
-            //command
-            String command, send_msg = "", priv_send_msg = "", attribute;
-            send_msg = message.replace("/","");
-            String[] splited = send_msg.split("\\s+"); 
+            //User typed a command => {nick,join,leave,priv,bye}
+            String command = "", send_msg = "", priv_send_msg = "", attribute = "";
+            send_msg = message.substring(1); //remove / from command header
+
+            String[] splited = send_msg.split(" ");  //split words   [command] [{user},{user message},{}]
             command = splited[0];
-            if(splited.length <= 2) attribute = splited[1]; //command ____
-            else{//command ___ {---------}
+
+            if(splited.length == 2){//{nick user,join lobby}
                 attribute = splited[1];
-                for(int i = 2; i < splited.length; i++) priv_send_msg += splited[i] + " ";
+            }else if(splited.length >= 3){// priv user message
+                attribute = splited[1];
+                for(int i= 2; i < splited.length; i++) priv_send_msg += splited[i] + " ";
             }
-            //parse command
+            /**
+             * //parse command
+            switch(command){
+                case 'nick': s = user
+            }
             String s = ((command.equalsIgnoreCase("join"))? attribute : "");
-            switch(user_servers.commandExecutionCode(command,key,s)){
+            switch(command){
+                case "nick":
+            }
+             */
+
+            switch(user_servers.commandExecutionCode(command,key,attribute)){
                 case "nick-ok": user_servers.cmdNick(user, buffer, attribute); break;
                 case "join-ok": user_servers.cmdJoin(user, buffer, attribute); break;
                 case "join-inside-ok": 

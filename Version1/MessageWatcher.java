@@ -9,8 +9,9 @@ class MessageWatcher implements Runnable{
     JTextArea chat_area;
     SocketChannel channel;
     ByteBuffer buffer;
-    Charset charset = Charset.forName("UTF8");
-    CharsetDecoder decoder = charset.newDecoder();
+    Charset charset;
+    CharsetDecoder decoder;
+    boolean flag = false;
 
     MessageWatcher(JTextArea chat_area, SocketChannel channel){
         this.chat_area = chat_area;
@@ -22,22 +23,23 @@ class MessageWatcher implements Runnable{
 
     public void run(){
         while(true)
-            try {
-                readMessage();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            try {readMessage();} 
+            catch (IOException e){e.printStackTrace();}
     }
 
     public void readMessage() throws IOException{
-        String message;
         buffer.clear();
         channel.read(buffer);
         buffer.flip();
-        message = decoder.decode(buffer).toString();
+
+        charset = Charset.forName("UTF8");
+        decoder = charset.newDecoder();
+
+        String message = decoder.decode(buffer).toString();
         System.out.println(message);
         String formated_message = this.formatMessage(message);
         printMessage(formated_message);
+        if(flag) System.exit(1);
     }
 
     public String formatMessage(String message){
@@ -45,21 +47,13 @@ class MessageWatcher implements Runnable{
         code = user = leftover = "";
         String[] msg = message.split(" ");
         code = msg[0];
-        int index = 1;
-        if(msg.length > 2){
+        //System.out.println(message);
+        if(msg.length >= 2){
             user = msg[1];
-            index = 2;
+            if(msg.length > 2)
+                for(int i = 1; i < msg.length; i++) leftover += msg[i] + " ";
         }
-        for(int i = index; i < msg.length; i++)
-            leftover += msg[i] + " ";
-        ArrayList<String> ss = new ArrayList<>();
-        ss.add(code); ss.add(user); ss.add(leftover);
-
-        int i = 0;
-        for(String s : ss)
-            if(s.charAt(s.length()-1) == '\n') ss.set(i++,s.substring(0,s.length()-1));
         String sending_message = "";
-        code = ss.get(0); user = ss.get(1); leftover = ss.get(2);
         switch(code){
             case "OK": sending_message = "Order completed.\n"; break;
             case "NEWNICK": sending_message = user +" changed username for "+leftover+".\n"; break;
@@ -68,7 +62,7 @@ class MessageWatcher implements Runnable{
             case "LEFT": sending_message = user+" left lobby.\n"; break;
             case "MESSAGE": sending_message = user+": "+leftover+"\n"; break;
             case "ERROR": sending_message = "Order can not be fulfilled\n"; break;
-            case "BYE": sending_message = "Bye, closing connection.\n"; break;
+            case "BYE": sending_message = "Bye, closing connection.\n"; flag=true; break;
             default: sending_message = message; break;//Message
         }
         return sending_message;

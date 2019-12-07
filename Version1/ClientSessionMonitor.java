@@ -69,7 +69,11 @@ class ClientSessionMonitor{
     }
 
     String commandExecutionCode(String cmd, SelectionKey key,String lobby){
+        /**
+         * Analyses command and returns messages
+         */
         cmd = cmd.toLowerCase();
+        //retrieve client
         ClientIndividualSession user = (ClientIndividualSession)key.attachment();
         String code = "";
         switch(cmd){
