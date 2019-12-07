@@ -43,11 +43,11 @@ class MessageWatcher implements Runnable{
     }
 
     public String formatMessage(String message){
+        if(message.charAt(message.length() - 1) == '\n') message = message.substring(0,message.length()-1);
         String code, user, leftover;
         code = user = leftover = "";
         String[] msg = message.split(" ");
         code = msg[0];
-        //System.out.println(message);
         if(msg.length >= 2){
             user = msg[1];
             if(msg.length > 2)

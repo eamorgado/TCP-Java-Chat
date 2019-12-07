@@ -31,6 +31,8 @@ public class ChatServer{
         if((int)message.charAt(message.length()-1) != 10) return true;
         else message = leftover;
 
+        if(message.charAt(message.length() - 1) == '\n') message = message.substring(0,message.length()-1);
+        System.out.println("[server--"+message+"]");
         if(message.charAt(0) == '/'){
             //User typed a command => {nick,join,leave,priv,bye}
             String command = "", send_msg = "", priv_send_msg = "", attribute = "";
@@ -45,6 +47,8 @@ public class ChatServer{
                 attribute = splited[1];
                 for(int i= 2; i < splited.length; i++) priv_send_msg += splited[i] + " ";
             }
+
+            System.out.println("[command:"+command+",attribute:"+attribute+",priv_send:"+priv_send_msg+"]");
             /**
              * //parse command
             switch(command){
@@ -55,16 +59,12 @@ public class ChatServer{
                 case "nick":
             }
              */
-
-            switch(user_servers.commandExecutionCode(command,key,attribute)){
+            String result = user_servers.commandExecutionCode(command,key,attribute);
+            System.out.println("Result: ["+result+"]");
+            switch(result){
                 case "nick-ok": user_servers.cmdNick(user, buffer, attribute); break;
                 case "join-ok": user_servers.cmdJoin(user, buffer, attribute); break;
                 case "join-inside-ok": 
-                    user_servers.cmdLeave(user, buffer);
-                    user_servers.cmdJoin(user, buffer, attribute);
-                break;
-                case "join-newlobby-ok": user_servers.cmdCreateLobby(user, buffer, attribute); break;
-                case "join-newlobby-inside-ok": 
                     user_servers.cmdLeave(user, buffer);
                     user_servers.cmdJoin(user, buffer, attribute);
                 break;
