@@ -1,4 +1,4 @@
-# A Simple TCP user-server chat
+# A TCP user-server chat
 
 ## Introduction
 
