@@ -10,7 +10,7 @@ import javax.swing.*;
 public class ChatClient{
     JFrame frame = new JFrame("Chat Client");
     private JTextField chatBox = new JTextField();
-    private JTextArea chatArea = new JTextArea();
+    private JTextPane chatArea = new JTextPane();
 
     private int port;
     private String server;
