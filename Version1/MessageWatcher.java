@@ -51,14 +51,14 @@ class MessageWatcher implements Runnable{
         if(msg.length >= 2){
             user = msg[1];
             if(msg.length > 2)
-                for(int i = 1; i < msg.length; i++) leftover += msg[i] + " ";
+                for(int i = 2; i < msg.length; i++) leftover += msg[i] + " ";
         }
         String sending_message = "";
         switch(code){
             case "OK": sending_message = "Order completed.\n"; break;
             case "NEWNICK": sending_message = user +" changed username for "+leftover+".\n"; break;
             case "PRIVATE": sending_message = user+" (direct message): "+leftover+"\n"; break;
-            case "JOIN": sending_message = user+" joined lobby.\n"; break;
+            case "JOINED": sending_message = user+" joined lobby "+leftover+".\n"; break;
             case "LEFT": sending_message = user+" left lobby.\n"; break;
             case "MESSAGE": sending_message = user+": "+leftover+"\n"; break;
             case "ERROR": sending_message = "Order can not be fulfilled\n"; break;

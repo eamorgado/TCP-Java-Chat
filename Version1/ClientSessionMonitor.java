@@ -64,6 +64,7 @@ class ClientSessionMonitor{
     }
     void sendMessageToAll(String message,ClientIndividualSession user,ByteBuffer buffer){
         if(this.lobbies.containsKey(user.getLobby())){
+            System.out.println("Sending messages to all users");
             ArrayList<ClientIndividualSession> users = this.lobbies.get(user.getLobby());
             for(ClientIndividualSession u : users)
                 this.sendMessageUser(message, u.getKey(), buffer);
@@ -80,21 +81,30 @@ class ClientSessionMonitor{
         String code = "";
         switch(cmd){
             case "nick":  
-                if(!this.isUsernameInUse(user.getUsername()))
+                System.out.println("Lob["+lobby+"]");
+                System.out.println("Usernames=["+this.usernames+"]");
+                if(!this.usernames.contains(lobby) && !lobby.equals(""))
                     code = "nick-ok";
                 else 
                     code = "nick-error";
             break;
             case "join":
-                if(user.getUsername() != null)
+                if(user.getUsername() != null && !lobby.equals(""))
                     code = ((!user.getConState().equals("INSIDE"))? "join-ok" : "join-inside-ok");
                 else code = "cmd-error";
             break;
-            case "priv": 
-                code = ((user.getUsername() != null)? "priv-ok" : "cmd-error");
+            case "priv":
+                if(user.getUsername() != null && !lobby.equals("")){
+                    if(this.usernames.contains(lobby))
+                        code = "priv-ok";
+                    else code = "cmd-error";
+                }
+                else code = "cmd-error";
             break;
             case "leave":  
-                code = ((user.getConState().equals("INSIDE"))? "leave-lobby" : "out-lobby");
+                if(user.getUsername() != null)
+                    code = ((user.getConState().equals("INSIDE"))? "leave-lobby" : "out-lobby");
+                else code = "cmd-error";
             break;
             case "bye": 
                 code = ((!user.getConState().equals("INSIDE"))? "bye-ok" : "bye-lobby-ok");
@@ -105,23 +115,26 @@ class ClientSessionMonitor{
     }
 
     void cmdNick(ClientIndividualSession user,ByteBuffer buffer,String username){
-        this.sendMessageUser("OK", user.getKey(), buffer);
         if(user.getUsername() != null){
             String old = user.getUsername();
             this.usernames.remove(user.getUsername());
-            for(ClientIndividualSession u : this.active_users)
-                if(u.getUsername().equals(user.getUsername()))
-                    u.setUsername(username);
-            if(!user.getConState().equals("OUTSIDE"))
+            for(ClientIndividualSession u : this.active_users){
+                if(u.getUsername().equals(user.getUsername())){
+                    u.setUsername(username); break;
+                }
+            }
+            if(user.getConState().equals("INSIDE"))
                 for(ClientIndividualSession u : this.lobbies.get(user.getLobby()))
                     if(u.getUsername().equals(user.getUsername()))
                         u.setUsername(username);
+            user.setUsername(username);
             this.sendMessageUser("NEWNICK "+old+" "+username, user.getKey(), buffer);
         }else{
             user.setUsername(username);
-            this.usernames.add(username);
             this.active_users.add(user);
         }
+        this.usernames.add(username);
+        this.sendMessageUser("OK", user.getKey(), buffer);
     }
     void cmdPriv(ClientIndividualSession user,ByteBuffer buffer,String username, String message){
         SelectionKey dest = this.findUserKey(username);
@@ -139,11 +152,8 @@ class ClientSessionMonitor{
         user.setConState("INSIDE");
         user.setLobby(lobby);
         subscribers.add(user);
-
-        if(!this.lobbies.containsKey(lobby))
-        this.sendMessageToAll("JOINED "+user.getUsername(), user, buffer);
-
-        this.lobbies.put(lobby,subscribers);        
+        this.lobbies.put(lobby,subscribers);   
+        this.sendMessageToAll("JOINED "+user.getUsername()+" "+lobby, user, buffer);     
         this.sendMessageUser("OK", user.getKey(), buffer);
     }
     void cmdLeave(ClientIndividualSession user,ByteBuffer buffer){
