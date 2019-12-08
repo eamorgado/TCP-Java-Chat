@@ -11,20 +11,27 @@ import java.util.*;
 
 class MessageWatcher implements Runnable{
     JTextPane chat_area;
+    JTextPane private_chat;
+    JTextPane chat_info;
     SocketChannel channel;
     ByteBuffer buffer;
     Charset charset;
     CharsetDecoder decoder;
     boolean flag = false;
 
-    MessageWatcher(JTextPane chat_area, SocketChannel channel){
+    MessageWatcher(JTextPane chat_area,JTextPane private_chat, JTextPane chat_info, SocketChannel channel){
         this.chat_area = chat_area;
+        this.private_chat = private_chat;
+        this.chat_info = chat_info;
         this.channel = channel;
         this.buffer = ByteBuffer.allocate(16384);
     }
 
-    public void append(String s, int color_foreground, int color_background,boolean bold){
-        StyledDocument doc = this.chat_area.getStyledDocument();
+    public void append(String s, int color_foreground, int color_background,boolean bold,int monitor){
+        StyledDocument doc;
+        if(monitor == 0) doc = this.chat_area.getStyledDocument(); //lobby message
+        else if(monitor == 1) doc = this.private_chat.getStyledDocument(); //private message
+        else doc = this.chat_info.getStyledDocument();
         StyleContext contex = new StyleContext();
         Style word = contex.addStyle("test", null);
         switch(color_foreground){
@@ -46,7 +53,7 @@ class MessageWatcher implements Runnable{
         catch(Exception e) {System.out.println(e);}
     }
     public void printMessage(StyleMessage message){
-        append(message.getString(),message.getForeground(),message.getBackground(),message.getBold());
+        append(message.getString(),message.getForeground(),message.getBackground(),message.getBold(),message.getMonitor());
     }
 
     public void run(){
@@ -83,19 +90,20 @@ class MessageWatcher implements Runnable{
         String sending_message = "";
         int color_foreground = 0, color_background = 0;
         boolean bold = false;
+        int monitor = 0;
         switch(code){
-            case "OK": sending_message = "Order completed.\n"; color_foreground = 3; bold = true; break;
+            case "OK": sending_message = "Order completed.\n"; color_foreground = 3; bold = true; monitor = 2; break;
             case "NEWNICK": sending_message = user +" changed username for "+leftover+".\n"; color_background = 5; bold = true; break;
-            case "PRIVATE": sending_message = user+" (direct message): "+leftover+"\n"; color_foreground = 2; bold = true; break;
+            case "PRIVATE": sending_message = user+" (direct message): "+leftover+"\n"; color_foreground = 2; bold = true; monitor = 1; break;
             case "JOINED": sending_message = user+" joined lobby "+leftover+".\n"; color_background = 5; bold = true; break;
             case "LEFT": sending_message = user+" left lobby.\n"; color_background = 5; bold = true; break;
             case "MESSAGE": sending_message = user+": "+leftover+"\n"; bold = true; break;
-            case "ERROR": sending_message = "Order can not be fulfilled\n"; color_foreground = 1; bold = true; break;
+            case "ERROR": sending_message = "Order can not be fulfilled\n"; color_foreground = 1; bold = true; monitor = 2; break;
             case "BYE": sending_message = "Bye, closing connection.\n"; flag=true; break;
             default: sending_message = message; break;//Message
         }
 
-        return new StyleMessage(sending_message,color_foreground,color_background,bold);
+        return new StyleMessage(sending_message,color_foreground,color_background,bold,monitor);
     }
 }
 
@@ -104,15 +112,18 @@ class StyleMessage{
     private int color_foreground, color_background;
     private String s;
     private boolean bold;
+    private int monitor;
 
-    StyleMessage(String s,int color_foreground,int color_background,boolean bold){
+    StyleMessage(String s,int color_foreground,int color_background,boolean bold,int monitor){
         this.s = s; 
         this.color_foreground = color_foreground; this.color_background = color_background;
         this.bold = bold;
+        this.monitor = monitor;
     }
 
     public String getString(){return this.s;}
     public int getForeground(){return this.color_foreground;}
     public int getBackground(){return this.color_background;}
     public boolean getBold(){return this.bold;}
+    public int getMonitor(){return this.monitor;}
 }

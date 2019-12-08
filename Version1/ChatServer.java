@@ -28,12 +28,26 @@ public class ChatServer{
 
         String message = decoder.decode(buffer).toString();
         leftover += message;
-        if((int)message.charAt(message.length()-1) != 10) return true;
+        if(message.charAt(0) == '\n'){
+            user_servers.sendMessageUser("ERROR", user.getKey(), buffer);
+            leftover = "";
+            return true;
+        }
+        if((int)message.charAt(message.length()-1) != 10)return true;
         else message = leftover;
 
         if(message.charAt(message.length() - 1) == '\n') message = message.substring(0,message.length()-1);
         System.out.println("[server--"+message+"]");
         if(message.charAt(0) == '/'){
+            if(message.length() <= 1){
+                user_servers.sendMessageUser("ERROR", user.getKey(), buffer);
+                leftover = "";
+                return true;
+            }else if(!Character.isLetter(message.charAt(1))){
+                user_servers.sendMessageUser("ERROR", user.getKey(), buffer);
+                leftover = "";
+                return true;
+            }
             //User typed a command => {nick,join,leave,priv,bye}
             String command = "", send_msg = "", priv_send_msg = "", attribute = "";
             send_msg = message.substring(1); //remove / from command header
@@ -48,19 +62,9 @@ public class ChatServer{
                 for(int i= 2; i < splited.length; i++) priv_send_msg += splited[i] + " ";
             }
 
-            System.out.println("[command:"+command+",attribute:"+attribute+",priv_send:"+priv_send_msg+"]");
-            /**
-             * //parse command
-            switch(command){
-                case 'nick': s = user
-            }
-            String s = ((command.equalsIgnoreCase("join"))? attribute : "");
-            switch(command){
-                case "nick":
-            }
-             */
+            //System.out.println("[command:"+command+",attribute:"+attribute+",priv_send:"+priv_send_msg+"]");
             String result = user_servers.commandExecutionCode(command,key,attribute);
-            System.out.println("Result: ["+result+"]");
+            //System.out.println("Result: ["+result+"]");
             switch(result){
                 case "nick-ok": user_servers.cmdNick(user, buffer, attribute); break;
                 case "join-ok": user_servers.cmdJoin(user, buffer, attribute); break;

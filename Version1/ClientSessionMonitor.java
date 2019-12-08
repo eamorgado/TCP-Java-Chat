@@ -81,8 +81,8 @@ class ClientSessionMonitor{
         String code = "";
         switch(cmd){
             case "nick":  
-                System.out.println("Lob["+lobby+"]");
-                System.out.println("Usernames=["+this.usernames+"]");
+                //System.out.println("Lob["+lobby+"]");
+                //System.out.println("Usernames=["+this.usernames+"]");
                 if(!this.usernames.contains(lobby) && !lobby.equals(""))
                     code = "nick-ok";
                 else 
@@ -128,7 +128,10 @@ class ClientSessionMonitor{
                     if(u.getUsername().equals(user.getUsername()))
                         u.setUsername(username);
             user.setUsername(username);
-            this.sendMessageUser("NEWNICK "+old+" "+username, user.getKey(), buffer);
+            if(user.getConState().equals("INSIDE"))
+                this.sendMessageToAll("NEWNICK "+old+" "+username, user, buffer);
+            else
+                this.sendMessageUser("NEWNICK "+old+" "+username, user.getKey(), buffer);
         }else{
             user.setUsername(username);
             this.active_users.add(user);
