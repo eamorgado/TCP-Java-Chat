@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -23,11 +24,15 @@ public class ChatClient{
     // Construtor
     public ChatClient(String server, int port) throws IOException {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter(){
+            public void windowClosing(WindowEvent e){
+                try{newMessage("/bye");}catch(IOException ie){}
+            }
+        });
         frame.setLocationRelativeTo(null);
         JPanel panel = new JPanel();
             panel.setLayout(new BorderLayout());
             panel.add(chatBox);
-            panel.setSize(800,100);
         frame.setLayout(new BorderLayout());
         frame.add(panel, BorderLayout.SOUTH);
 
@@ -64,9 +69,9 @@ public class ChatClient{
         chatBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {newMessage(chatBox.getText());
-                } catch (IOException ex) {
-                } finally {chatBox.setText("");}
+                try {newMessage(chatBox.getText());}
+                catch (IOException ex){}
+                finally {chatBox.setText("");}
             }
         });
         frame.addWindowListener(new WindowAdapter() {
@@ -84,7 +89,7 @@ public class ChatClient{
         buffer.clear();
         buffer.rewind();
         message += "\n";
-        buffer.put(message.getBytes());
+        buffer.put(message.getBytes(StandardCharsets.UTF_8));
         buffer.flip();
         channel.write(buffer);
     }

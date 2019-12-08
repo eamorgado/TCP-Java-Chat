@@ -27,6 +27,7 @@ public class ChatServer{
         if(buffer.limit() == 0) return false;
 
         String message = decoder.decode(buffer).toString();
+        //System.out.print(message);
         leftover += message;
         if(message.charAt(0) == '\n'){
             user_servers.sendMessageUser("ERROR", user.getKey(), buffer);
@@ -37,7 +38,7 @@ public class ChatServer{
         else message = leftover;
 
         if(message.charAt(message.length() - 1) == '\n') message = message.substring(0,message.length()-1);
-        System.out.println("[server--"+message+"]");
+        //System.out.println("[server--"+message+"]");
         if(message.charAt(0) == '/'){
             if(message.length() <= 1){
                 user_servers.sendMessageUser("ERROR", user.getKey(), buffer);

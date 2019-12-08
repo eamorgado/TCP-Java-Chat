@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /*------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ class ClientSessionMonitor{
         buffer.rewind(); //position = 0
 
         if((int)message.charAt(message.length()-1) != 10) message += "\n";
-        to_buffer = message.getBytes();
+        to_buffer = message.getBytes(StandardCharsets.UTF_8);
         buffer.put(to_buffer);
         buffer.flip();
         SocketChannel channel = (SocketChannel)key.channel();
@@ -67,7 +68,8 @@ class ClientSessionMonitor{
             System.out.println("Sending messages to all users");
             ArrayList<ClientIndividualSession> users = this.lobbies.get(user.getLobby());
             for(ClientIndividualSession u : users)
-                this.sendMessageUser(message, u.getKey(), buffer);
+                if(!u.getUsername().equals(user.getUsername()))            
+                    this.sendMessageUser(message, u.getKey(), buffer);
         }
     }
 
@@ -115,6 +117,7 @@ class ClientSessionMonitor{
     }
 
     void cmdNick(ClientIndividualSession user,ByteBuffer buffer,String username){
+        this.sendMessageUser("OK", user.getKey(), buffer);
         if(user.getUsername() != null){
             String old = user.getUsername();
             this.usernames.remove(user.getUsername());
@@ -137,7 +140,6 @@ class ClientSessionMonitor{
             this.active_users.add(user);
         }
         this.usernames.add(username);
-        this.sendMessageUser("OK", user.getKey(), buffer);
     }
     void cmdPriv(ClientIndividualSession user,ByteBuffer buffer,String username, String message){
         SelectionKey dest = this.findUserKey(username);
@@ -155,11 +157,12 @@ class ClientSessionMonitor{
         user.setConState("INSIDE");
         user.setLobby(lobby);
         subscribers.add(user);
-        this.lobbies.put(lobby,subscribers);   
-        this.sendMessageToAll("JOINED "+user.getUsername()+" "+lobby, user, buffer);     
-        this.sendMessageUser("OK", user.getKey(), buffer);
+        this.lobbies.put(lobby,subscribers);  
+        this.sendMessageUser("OK", user.getKey(), buffer); 
+        this.sendMessageToAll("JOINED "+user.getUsername(), user, buffer);     
     }
     void cmdLeave(ClientIndividualSession user,ByteBuffer buffer){
+        this.sendMessageUser("OK", user.getKey(), buffer);
         ArrayList<ClientIndividualSession> subscribers = this.lobbies.get(user.getLobby());
         subscribers.remove(user);
         if(subscribers.size() != 0) 
@@ -168,7 +171,6 @@ class ClientSessionMonitor{
             this.lobbies.remove(user.getLobby());
         user.setConState("OUTSIDE");
         this.sendMessageToAll("LEFT "+user.getUsername(), user, buffer);
-        this.sendMessageUser("OK", user.getKey(), buffer);
     }
     void cmdBye(ClientIndividualSession user,ByteBuffer buffer){
         if(user.getUsername() != null){

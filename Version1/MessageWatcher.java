@@ -10,13 +10,18 @@ import javax.swing.text.*;
 import java.util.*;
 
 class MessageWatcher implements Runnable{
+    /**
+     * 
+     *  Note: for some reason, when we use ´ º « or » in a message it creates an error
+     * 
+     */
     JTextPane chat_area;
     JTextPane private_chat;
     JTextPane chat_info;
     SocketChannel channel;
     ByteBuffer buffer;
-    Charset charset;
-    CharsetDecoder decoder;
+    Charset charset = Charset.forName("UTF8");
+    CharsetDecoder decoder = charset.newDecoder();
     boolean flag = false;
 
     MessageWatcher(JTextPane chat_area,JTextPane private_chat, JTextPane chat_info, SocketChannel channel){
@@ -67,35 +72,38 @@ class MessageWatcher implements Runnable{
         channel.read(buffer);
         buffer.flip();
 
-        charset = Charset.forName("UTF8");
-        decoder = charset.newDecoder();
-
         String message = decoder.decode(buffer).toString();
-        System.out.println(message);
+        System.out.print(message);
         printMessage(this.formatMessage(message));
         if(flag) System.exit(1);
     }
 
     public StyleMessage formatMessage(String message){
-        if(message.charAt(message.length() - 1) == '\n') message = message.substring(0,message.length()-1);
         String code, user, leftover;
-        code = user = leftover = "";
-        String[] msg = message.split(" ");
-        code = msg[0];
-        if(msg.length >= 2){
-            user = msg[1];
-            if(msg.length > 2)
-                for(int i = 2; i < msg.length; i++) leftover += msg[i] + " ";
-        }
         String sending_message = "";
         int color_foreground = 0, color_background = 0;
         boolean bold = false;
         int monitor = 0;
+        code = user = leftover = "";
+        if(message.length()==0){
+            code = "ERROR";
+        }
+        else{
+            if(message.charAt(message.length() - 1) == '\n') message = message.substring(0,message.length()-1);
+            String[] msg = message.split(" ");
+            code = msg[0];
+            if(msg.length >= 2){
+                user = msg[1];
+                if(msg.length > 2)
+                    for(int i = 2; i < msg.length; i++) leftover += msg[i] + " ";
+            }
+        }
+        
         switch(code){
             case "OK": sending_message = "Order completed.\n"; color_foreground = 3; bold = true; monitor = 2; break;
             case "NEWNICK": sending_message = user +" changed username for "+leftover+".\n"; color_background = 5; bold = true; break;
             case "PRIVATE": sending_message = user+" (direct message): "+leftover+"\n"; color_foreground = 2; bold = true; monitor = 1; break;
-            case "JOINED": sending_message = user+" joined lobby "+leftover+".\n"; color_background = 5; bold = true; break;
+            case "JOINED": sending_message = user+" joined lobby.\n"; color_background = 5; bold = true; break;
             case "LEFT": sending_message = user+" left lobby.\n"; color_background = 5; bold = true; break;
             case "MESSAGE": sending_message = user+": "+leftover+"\n"; bold = true; break;
             case "ERROR": sending_message = "Order can not be fulfilled\n"; color_foreground = 1; bold = true; monitor = 2; break;
